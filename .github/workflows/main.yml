@@ -12,6 +12,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Find project folder
+        run: |
+          echo "=== Files in repository ==="
+          find . -maxdepth 3 -not -path './.git/*' | sort | head -100
+          P=$(find . -name pubspec.yaml -not -path './.git/*' | head -1)
+          if [ -z "$P" ]; then
+            echo "ERROR: pubspec.yaml was not uploaded. Upload the project files again."
+            exit 1
+          fi
+          D=$(dirname "$P")
+          echo "Project folder: $D"
+          for f in lib assets; do
+            if [ ! -d "$D/$f" ]; then
+              echo "ERROR: the '$f' folder is missing from the upload. Upload it again."
+              exit 1
+            fi
+          done
+          echo "PROJECT_DIR=$D" >> "$GITHUB_ENV"
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -22,23 +41,27 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Generate Android project and build debug APK
+      - name: Build debug APK
         run: |
           flutter --version
-          flutter create --org com.skillify --project-name skillify --platforms=android build_app
-          cp pubspec.yaml build_app/pubspec.yaml
-          rm -rf build_app/lib build_app/test
-          cp -r lib build_app/lib
-          cp -r assets build_app/assets
-          python3 tools/patch_manifest.py build_app/android/app/src/main/AndroidManifest.xml
-          cd build_app
-          flutter pub get
-          dart run flutter_launcher_icons
-          flutter build apk --debug
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: Skillify-debug-apk
-          path: build_app/build/app/outputs/flutter-apk/app-debug.apk
-          if-no-files-found: error
+          flutter create --org com.skillify --project-name skillify --platforms=android "$GITHUB_WORKSPACE/build_app"
+          cp "$PROJECT_DIR/pubspec.yaml" "$GITHUB_WORKSPACE/build_app/pubspec.yaml"
+          rm -rf "$GITHUB_WORKSPACE/build_app/lib" "$GITHUB_WORKSPACE/build_app/test"
+          cp -r "$PROJECT_DIR/lib" "$GITHUB_WORKSPACE/build_app/lib"
+          cp -r "$PROJECT_DIR/assets" "$GITHUB_WORKSPACE/build_app/assets"
+          M="$GITHUB_WORKSPACE/build_app/android/app/src/main/AndroidManifest.xml"
+          python3 - "$M" <<'PY'
+          import re, sys
+          p = sys.argv[1]
+          s = open(p, encoding="utf-8").read()
+          s = re.sub(r'android:label="[^"]*"', 'android:label="Skillify"', s, count=1)
+          if "android.permission.INTERNET" not in s:
+              s = s.replace("<application", '<uses-permission android:name="android.permission.INTERNET"/>\n    <application', 1)
+          intent = '<intent>\n            <action android:name="android.intent.action.VIEW"/>\n            <data android:scheme="https"/>\n        </intent>\n    '
+          if 'android:scheme="https"' not in s:
+              if "</queries>" in s:
+                  s = s.replace("</queries>", intent + "</queries>", 1)
+              else:
+                  s = s.replace("<application", "<queries>\n        " + intent + "</queries>\n    <application", 1)
+          open(p, "w", encoding="utf-8").write(s)
+          print("Manifest
