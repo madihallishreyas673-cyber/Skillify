@@ -2,15 +2,13 @@ name: Build APK
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   workflow_dispatch:
-
-permissions:
-  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
 
@@ -19,27 +17,28 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: subosito/flutter-action@v2
         with:
-          gradle-version: '8.9'
+          channel: stable
+          cache: true
 
-      - name: Build debug APK
-        run: gradle -p FocusVerseAI/FocusVerseAI assembleDebug --no-daemon --stacktrace
-
-      - name: Rename APK
-        run: cp FocusVerseAI/FocusVerseAI/app/build/outputs/apk/debug/app-debug.apk FocusVerseAI.apk
+      - name: Generate Android project and build debug APK
+        run: |
+          flutter --version
+          flutter create --org com.skillify --project-name skillify --platforms=android build_app
+          cp pubspec.yaml build_app/pubspec.yaml
+          rm -rf build_app/lib build_app/test
+          cp -r lib build_app/lib
+          cp -r assets build_app/assets
+          python3 tools/patch_manifest.py build_app/android/app/src/main/AndroidManifest.xml
+          cd build_app
+          flutter pub get
+          dart run flutter_launcher_icons
+          flutter build apk --debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: FocusVerseAI-apk
-          path: FocusVerseAI.apk
-
-      - name: Publish public download link
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v0.1.${{ github.run_number }}
-          name: FocusVerse AI build ${{ github.run_number }}
-          body: Download FocusVerseAI.apk below, open it on your Android phone and tap Install.
-          files: FocusVerseAI.apk
-          
+          name: Skillify-debug-apk
+          path: build_app/build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
