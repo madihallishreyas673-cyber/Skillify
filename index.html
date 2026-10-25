@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Opportunity Engine</title>
+<link rel="manifest" href="manifest.json"><meta name="theme-color" content="#0b1a2b">
+<link rel="icon" href="icon-192.png">
+<style>
+:root{--bg:#0b1a2b;--s:#12263d;--s2:#1a3350;--t:#e8f0f8;--m:#93a8bf;--a:#2dd4bf;--w:#fbbf24;--r:14px}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--t);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding-bottom:78px}
+header{display:flex;justify-content:space-between;align-items:center;padding:calc(12px + env(safe-area-inset-top)) 16px 12px;position:sticky;top:0;background:var(--bg);z-index:5;border-bottom:1px solid var(--s2)}
+h1{font-size:18px;margin:0;letter-spacing:.2px}h2{font-size:22px;margin:4px 0 12px}h3{font-size:16px;margin:0 0 6px}
+main{max-width:720px;margin:0 auto;padding:16px}
+.c{background:var(--s);border-radius:var(--r);padding:14px;margin-bottom:12px}
+.m{color:var(--m);font-size:14px}.tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:99px;background:var(--s2);color:var(--m);margin:2px 4px 2px 0}
+.tag.w{background:#3b2f0a;color:var(--w)}.tag.a{background:#0d3b37;color:var(--a)}
+button,select,input,textarea{font:inherit;color:var(--t);background:var(--s2);border:1px solid #2a4a6d;border-radius:10px;padding:10px 12px;min-height:44px}
+input,textarea,select{width:100%;margin:4px 0 10px}textarea{min-height:90px}
+button{cursor:pointer;background:var(--s2)}button.p{background:var(--a);color:#05211e;border-color:var(--a);font-weight:700}
+button.on{background:var(--a);color:#05211e;border-color:var(--a)}button.g{background:none;border-color:transparent;color:var(--m)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--a);outline-offset:2px}
+.bar{height:8px;background:var(--s2);border-radius:9px;overflow:hidden}.bar i{display:block;height:100%;background:var(--a)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.row>*{flex:0 0 auto}.sp{justify-content:space-between}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:#0e2036;border-top:1px solid var(--s2);padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;border:0;border-radius:0;background:none;color:var(--m);font-size:12px;padding:8px 2px;min-height:56px}
+nav button.on{color:var(--a);background:none}nav b{display:block;font-size:20px}
+label{font-size:14px;color:var(--m)}.chips button{padding:6px 10px;min-height:36px;font-size:13px}
+.big{font-size:30px;font-weight:700;color:var(--a)}
+.note{border-left:3px solid var(--w);padding:8px 12px;background:#1d2a3a;border-radius:8px;font-size:13px;color:var(--m);margin-bottom:12px}
+#resume{background:#fff;color:#111;border-radius:var(--r);padding:20px}#resume h2,#resume h3{color:#111}#resume .m{color:#444}
+@media print{body{background:#fff;padding:0}header,nav,.np{display:none!important}main{padding:0;max-width:none}#resume{padding:0}}
+@media(prefers-reduced-motion:no-preference){.bar i{transition:width .4s}}
+</style></head><body>
+<header><h1>Opportunity Engine</h1><button class="g" data-a="tab" data-v="profile" aria-label="Profile">👤 <span id="who"></span></button></header>
+<main id="v"></main>
+<nav id="nav"></nav>
+<script>
+const $=s=>document.querySelector(s);
+const esc=t=>String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let S;try{S=JSON.parse(localStorage.getItem('oe')||'null')}catch(e){}
+S=S||{p:{},sk:{},career:'',done:{},saved:[],apps:[],tab:'home',jt:'browse',q:'',rem:false};
+const save=()=>{try{localStorage.setItem('oe',JSON.stringify(S))}catch(e){}};
+const LV=['None','Beginner','Intermediate','Advanced'];
+const CAR={
+web:{n:'Web Developer',sk:['HTML & CSS','JavaScript','Git','Problem solving'],st:[
+['Foundations','Learn HTML and CSS basics (freeCodeCamp: Responsive Web Design)','Build a one-page personal site','Practice flexbox layout with 3 small pages'],
+['Core skills','Learn JavaScript basics (javascript.info)','Build a to-do list app','Create a GitHub account and upload your projects'],
+['Portfolio','Build a weather app using a free public API','Publish 3 projects in a portfolio page','Solve 5 beginner coding exercises']]},
+data:{n:'Data Analyst',sk:['Excel/Sheets','Data analysis','SQL','Communication'],st:[
+['Foundations','Learn spreadsheet formulas (Google Sheets free lessons)','Clean a messy dataset from a public source','Make 3 charts and explain them in writing'],
+['Core skills','Learn basic SQL (Khan Academy: Intro to SQL)','Answer 10 practice questions on a sample database','Learn pivot tables'],
+['Portfolio','Analyze a public dataset and write a 1-page findings report','Share your report with a friend and ask for feedback','Add the report to your resume']]},
+mkt:{n:'Digital Marketer',sk:['Social media','Writing','Graphic design','Communication'],st:[
+['Foundations','Take Google Digital Garage: Fundamentals of Digital Marketing','Study 3 brands you like and note what they post','Open a practice social account for a made-up brand'],
+['Core skills','Write 10 sample posts','Make 5 graphics with a free design tool','Learn what SEO means and optimize one page'],
+['Portfolio','Run a small campaign for a local shop or friend (with permission)','Record results: reach, likes, clicks','Save before/after examples in a portfolio']]},
+sup:{n:'Customer Support',sk:['Communication','Writing','Computer basics','Problem solving'],st:[
+['Foundations','Practice writing clear, polite replies to 10 sample complaints','Learn basic typing and email tools','Learn how help desks and tickets work'],
+['Core skills','Role-play 5 difficult customer situations with a friend','Write a short help-article for a product you know','Learn a free help-desk tool'],
+['Portfolio','Collect your sample replies and help-article as a work sample','Prepare 5 interview answers using real examples','Apply to entry-level support roles']]},
+des:{n:'Graphic Designer',sk:['Graphic design','Creativity','Communication','Computer basics'],st:[
+['Foundations','Learn color, spacing and fonts (free Canva Design School)','Recreate 3 designs you admire','Practice with a free design tool'],
+['Core skills','Design a logo, a poster and a social post for a made-up brand','Ask 2 people for feedback and revise','Learn to export files properly'],
+['Portfolio','Make 5 polished pieces for a portfolio page','Write a short note on your process for each','Offer one small design job to a local business']]},
+va:{n:'Virtual Assistant',sk:['Organization','Writing','Excel/Sheets','Communication','Computer basics'],st:[
+['Foundations','Learn calendar and email management tools','Practice managing a mock inbox and schedule','Learn basic spreadsheets'],
+['Core skills','Write 5 professional emails from templates','Build a simple tracking sheet for tasks','Learn video-call and file-sharing tools'],
+['Portfolio','Create a sample weekly report','Offer your help to one small business or person for free to get a reference','Put your services and rates in a one-page profile']]}};
+const ALL=[...new Set(Object.values(CAR).flatMap(c=>c.sk))].sort();
+const JOBS=[
+{id:1,t:'Junior Web Developer',co:'Example Tech Ltd',sk:['HTML & CSS','JavaScript','Git'],lv:'Entry',rem:true,pay:'Demo: $800–1,200/mo',ty:'Job',dl:'Demo'},
+{id:2,t:'Data Entry & Spreadsheet Assistant',co:'Sample Logistics Co',sk:['Excel/Sheets','Computer basics','Organization'],lv:'Entry',rem:true,pay:'Demo: $5–8/hr',ty:'Freelance',dl:'Demo'},
+{id:3,t:'Social Media Intern',co:'Fictional Brand Studio',sk:['Social media','Writing','Graphic design'],lv:'Internship',rem:false,pay:'Demo: stipend',ty:'Internship',dl:'Demo'},
+{id:4,t:'Customer Support Agent',co:'Demo Helpdesk Inc',sk:['Communication','Writing','Computer basics'],lv:'Entry',rem:true,pay:'Demo: $600–900/mo',ty:'Job',dl:'Demo'},
+{id:5,t:'Logo & Poster Designer',co:'Sample Cafe',sk:['Graphic design','Creativity','Communication'],lv:'Entry',rem:true,pay:'Demo: $30–60/project',ty:'Freelance',dl:'Demo'},
+{id:6,t:'Junior Data Analyst Trainee',co:'Example Analytics',sk:['Data analysis','Excel/Sheets','SQL'],lv:'Apprenticeship',rem:false,pay:'Demo: training wage',ty:'Apprenticeship',dl:'Demo'},
+{id:7,t:'Virtual Assistant (Part-time)',co:'Fictional Consulting',sk:['Organization','Writing','Communication','Excel/Sheets'],lv:'Entry',rem:true,pay:'Demo: $4–7/hr',ty:'Freelance',dl:'Demo'},
+{id:8,t:'Content Writer',co:'Demo Media',sk:['Writing','Social media','Communication'],lv:'Entry',rem:true,pay:'Demo: $10–25/article',ty:'Freelance',dl:'Demo'}];
+const lvl=k=>(S.sk[k]&&S.sk[k].l)||0;
+const match=j=>{const m=j.sk.filter(k=>lvl(k)>0),x=j.sk.filter(k=>!lvl(k));
+ return{p:Math.round(j.sk.reduce((a,k)=>a+lvl(k)/3,0)/j.sk.length*100),m,x}};
+const careerScore=c=>Math.round(CAR[c].sk.reduce((a,k)=>a+lvl(k)/3,0)/CAR[c].sk.length*100);
+const tasks=c=>CAR[c].st.flatMap((s,i)=>s.slice(1).map((t,j)=>({id:c+i+'_'+j,t,st:s[0]})));
+const planPct=()=>{if(!S.career)return 0;const T=tasks(S.career);return Math.round(T.filter(x=>S.done[x.id]).length/T.length*100)};
+const PF=['name','email','location','education','experience','interests','goal','links','summary'];
+const profPct=()=>Math.round((PF.filter(f=>(S.p[f]||'').trim()).length+(Object.values(S.sk).some(s=>s.l)?1:0))/(PF.length+1)*100);
+const bar=p=>`<div class="bar" role="progressbar" aria-valuenow="${p}" aria-valuemin="0" aria-valuemax="100"><i style="width:${p}%"></i></div>`;
+const TABS=[['home','🏠','Home'],['skills','🧭','Skills'],['plan','📚','Plan'],['jobs','💼','Jobs'],['resume','📄','Resume']];
+
+function home(){
+ const nxt=!(S.p.name||'').trim()?['Add your name and details','profile']:!Object.values(S.sk).some(s=>s.l)?['Rate your skills','skills']:!S.career?['Pick a career path and make your plan','plan']:planPct()<100?['Do this week’s plan tasks','plan']:['Browse opportunities and track applications','jobs'];
+ return`<h2>${S.p.name?'Hi, '+esc(S.p.name.split(' ')[0]):'Welcome'}</h2>
+ <div class="c"><div class="m">Next step</div><h3>${nxt[0]}</h3><button class="p" data-a="tab" data-v="${nxt[1]}">Go</button></div>
+ <div class="c"><div class="row sp"><span>Profile complete</span><b>${profPct()}%</b></div>${bar(profPct())}</div>
+ <div class="c"><div class="row sp"><span>${S.career?esc(CAR[S.career].n)+' plan':'Learning plan'}</span><b>${planPct()}%</b></div>${bar(planPct())}</div>
+ <div class="row"><div class="c" style="flex:1"><div class="big">${Object.values(S.sk).filter(s=>s.l).length}</div><div class="m">Skills rated</div></div>
+ <div class="c" style="flex:1"><div class="big">${S.saved.length}</div><div class="m">Saved jobs</div></div>
+ <div class="c" style="flex:1"><div class="big">${S.apps.length}</div><div class="m">Tracked</div></div></div>
+ <div class="note">Suggestions here are guidance only. No app can promise a job or income. Your data stays on this phone.</div>`}
+
+function skills(){
+ const rated=Object.values(S.sk).some(s=>s.l);
+ const rec=Object.keys(CAR).map(c=>[c,careerScore(c)]).sort((a,b)=>b[1]-a[1]).slice(0,3);
+ return`<h2>Your skills</h2><p class="m">Rate what you can do today. Add a link to proof (a project, certificate or sample) to mark it as backed by evidence. This app cannot verify proof itself.</p>
+ ${ALL.map(k=>{const s=S.sk[k]||{};return`<div class="c"><div class="row sp"><b>${esc(k)}</b>${s.l&&s.ev?'<span class="tag a">Evidence linked</span>':s.l?'<span class="tag w">Self-reported</span>':''}</div>
+ <div class="row chips" role="group" aria-label="${esc(k)} level">${LV.map((n,i)=>`<button class="${s.l===i||(!s.l&&i===0)?'on':''}" data-a="lvl" data-k="${esc(k)}" data-v="${i}">${n}</button>`).join('')}</div>
+ ${s.l?`<input placeholder="Link to proof (optional)" value="${esc(s.ev||'')}" data-ev="${esc(k)}" aria-label="Proof link for ${esc(k)}">`:''}</div>`}).join('')}
+ ${rated?`<h2>Paths that fit you</h2>${rec.map(([c,p])=>{const K=CAR[c].sk;return`<div class="c"><div class="row sp"><h3>${CAR[c].n}</h3><b>${p}%</b></div>${bar(p)}
+ <p class="m">Why: you rated ${K.filter(k=>lvl(k)).map(esc).join(', ')||'none of its core skills yet'}. Still to build: ${K.filter(k=>!lvl(k)).map(esc).join(', ')||'nothing major'}.</p>
+ <button class="p" data-a="career" data-v="${c}">Make my plan</button></div>`}).join('')}`:''}`}
+
+function plan(){
+ const sel=`<select data-a="careersel" aria-label="Career path"><option value="">Choose a career path…</option>${Object.entries(CAR).map(([k,c])=>`<option value="${k}" ${S.career===k?'selected':''}>${c.n}</option>`).join('')}</select>`;
+ if(!S.career)return`<h2>Learning plan</h2>${sel}<div class="c m">Pick a path to get a step-by-step plan using free resources. Rate your skills first for personal suggestions.</div>`;
+ const T=tasks(S.career);let last='';
+ return`<h2>${CAR[S.career].n} plan</h2>${sel}<div class="c"><div class="row sp"><span>Progress</span><b>${planPct()}%</b></div>${bar(planPct())}<p class="m">Suggested pace: about 2 weeks per stage, ${esc(S.p.hours||'a few hours a week')}.</p></div>
+ ${T.map(x=>{const h=x.st!==last?(last=x.st,`<h3 style="margin-top:14px">Stage: ${x.st}</h3>`):'';
+ return h+`<label class="c row" style="display:flex;color:var(--t)"><input type="checkbox" style="width:24px;min-height:24px;margin:0" data-done="${x.id}" ${S.done[x.id]?'checked':''}><span style="flex:1">${esc(x.t)}</span></label>`}).join('')}
+ <div class="note">Free resources change over time. Check each one is still available in your language and region.</div>`}
+
+function jobs(){
+ const sw=`<div class="row chips np" style="margin-bottom:12px"><button class="${S.jt==='browse'?'on':''}" data-a="jt" data-v="browse">Browse</button><button class="${S.jt==='saved'?'on':''}" data-a="jt" data-v="saved">Saved (${S.saved.length})</button><button class="${S.jt==='track'?'on':''}" data-a="jt" data-v="track">Tracker (${S.apps.length})</button></div>`;
+ if(S.jt==='track')return`<h2>Applications</h2>${sw}
+ <div class="c"><h3>Add a real application</h3><input id="at" placeholder="Job title"><input id="ac" placeholder="Company"><input id="al" placeholder="Link to listing"><label>Deadline</label><input id="ad" type="date"><button class="p" data-a="addapp">Add to tracker</button></div>
+ ${S.apps.length?S.apps.map((a,i)=>`<div class="c"><div class="row sp"><b>${esc(a.t)}</b><button class="g" data-a="delapp" data-v="${i}" aria-label="Remove">✕</button></div><div class="m">${esc(a.co)}${a.dl?' · deadline '+esc(a.dl):''}</div>${a.link&&/^https?:\/\//i.test(a.link)?`<a href="${esc(a.link)}" target="_blank" rel="noopener" style="color:var(--a)">Open listing</a>`:''}
+ <select data-st="${i}" aria-label="Status">${['Planned','Applied','Interview','Offer','Rejected'].map(s=>`<option ${a.s===s?'selected':''}>${s}</option>`).join('')}</select></div>`).join(''):'<div class="c m">No applications yet. Track the real jobs you apply for here.</div>'}`;
+ let L=JOBS.map(j=>({j,m:match(j)}));
+ if(S.jt==='saved')L=L.filter(x=>S.saved.includes(x.j.id));
+ if(S.q)L=L.filter(x=>(x.j.t+x.j.co+x.j.sk.join()).toLowerCase().includes(S.q.toLowerCase()));
+ if(S.rem)L=L.filter(x=>x.j.rem);
+ L.sort((a,b)=>b.m.p-a.m.p);
+ return`<h2>Opportunities</h2>${sw}
+ <div class="note">These are fictional DEMO listings to show how matching works. They are not real jobs. Add real ones you find in the Tracker tab.</div>
+ <input id="q" placeholder="Search jobs or skills" value="${esc(S.q)}" aria-label="Search"><label class="row" style="color:var(--t)"><input type="checkbox" id="rem" style="width:24px;min-height:24px;margin:0" ${S.rem?'checked':''}> Remote only</label>
+ ${L.length?L.map(({j,m})=>`<div class="c"><div class="row sp"><h3>${esc(j.t)}</h3><b style="color:var(--a)">${m.p}%</b></div><div class="m">${esc(j.co)} · ${j.rem?'Remote':'On-site'} · ${esc(j.pay)}</div>
+ <div>${j.sk.map(k=>`<span class="tag ${lvl(k)?'a':''}">${esc(k)}</span>`).join('')}<span class="tag w">DEMO data</span></div>
+ <p class="m">Match: ${m.m.length?'you have '+m.m.map(esc).join(', '):'no matching skills rated yet'}${m.x.length?'. Missing: '+m.x.map(esc).join(', '):''}. Not verified, no guarantee of hiring.</p>
+ <div class="row"><button data-a="save" data-v="${j.id}">${S.saved.includes(j.id)?'★ Saved':'☆ Save'}</button><button data-a="track" data-v="${j.id}">Track</button></div></div>`).join(''):'<div class="c m">Nothing here yet.</div>'}`}
+
+function resume(){
+ const P=S.p,sk=Object.entries(S.sk).filter(([k,s])=>s.l);
+ const blk=(h,t)=>t&&t.trim()?`<h3>${h}</h3><p style="white-space:pre-wrap;margin:0 0 10px">${esc(t)}</p>`:'';
+ return`<h2 class="np">Resume</h2><p class="m np">Built only from what you entered in Profile and Skills. Edit there, then print or save as PDF.</p>
+ <div id="resume"><h2 style="margin:0">${esc(P.name||'Your Name')}</h2><div class="m" style="margin-bottom:10px">${[P.email,P.location].filter(Boolean).map(esc).join(' · ')}</div>
+ ${blk('Summary',P.summary)}${blk('Experience',P.experience)}${blk('Education',P.education)}
+ ${sk.length?`<h3>Skills</h3><p style="margin:0 0 10px">${sk.map(([k,s])=>esc(k)+' ('+LV[s.l]+')').join(' · ')}</p>`:''}
+ ${blk('Links',P.links)}${sk.some(([k,s])=>s.ev)?`<h3>Proof of work</h3><p style="margin:0">${sk.filter(([k,s])=>s.ev).map(([k,s])=>esc(k)+': '+esc(s.ev)).join('<br>')}</p>`:''}</div>
+ <div class="row np" style="margin-top:12px"><button class="p" data-a="print">Print / Save as PDF</button><button data-a="tab" data-v="profile">Edit details</button></div>`}
+
+function profile(){
+ const f=(k,l,ta)=>`<label for="f_${k}">${l}</label>${ta?`<textarea id="f_${k}" data-f="${k}">${esc(S.p[k]||'')}</textarea>`:`<input id="f_${k}" data-f="${k}" value="${esc(S.p[k]||'')}">`}`;
+ return`<h2>Profile</h2><div class="c">${f('name','Full name')}${f('email','Email')}${f('location','Location')}${f('hours','Time available to learn (e.g. 5 hours a week)')}
+ ${f('education','Education and qualifications',1)}${f('experience','Work or project experience',1)}${f('interests','Career interests',1)}${f('goal','Career and income goals',1)}${f('links','Portfolio or resume links',1)}${f('summary','Short summary about you',1)}
+ <p class="m">Only write true information. Everything saves automatically on this phone.</p></div>
+ <div class="c"><h3>Your data</h3><div class="row"><button data-a="export">Download my data</button><button data-a="wipe">Delete all my data</button></div></div>`}
+
+const V={home,skills,plan,jobs,resume,profile};
+function render(){const y=window.scrollY;$('#v').innerHTML=V[S.tab]();$('#who').textContent=(S.p.name||'').split(' ')[0];
+ $('#nav').innerHTML=TABS.map(([k,i,n])=>`<button class="${S.tab===k?'on':''}" data-a="tab" data-v="${k}" ${S.tab===k?'aria-current="page"':''}><b>${i}</b>${n}</button>`).join('');window.scrollTo(0,y);save()}
+const go=t=>{S.tab=t;render();window.scrollTo(0,0)};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a,v=b.dataset.v;
+ if(a==='tab')go(v);
+ else if(a==='lvl'){const k=b.dataset.k;S.sk[k]=Object.assign(S.sk[k]||{},{l:+v});if(!+v)delete S.sk[k];render()}
+ else if(a==='career'){S.career=v;go('plan')}
+ else if(a==='jt'){S.jt=v;render()}
+ else if(a==='save'){const i=S.saved.indexOf(+v);i<0?S.saved.push(+v):S.saved.splice(i,1);render()}
+ else if(a==='track'){const j=JOBS.find(x=>x.id==v);S.apps.push({t:j.t+' (demo)',co:j.co,link:'',dl:'',s:'Planned'});S.jt='track';render()}
+ else if(a==='addapp'){const t=$('#at').value.trim();if(!t)return alert('Enter a job title first.');S.apps.push({t,co:$('#ac').value.trim(),link:$('#al').value.trim(),dl:$('#ad').value,s:'Planned'});render()}
+ else if(a==='delapp'){S.apps.splice(+v,1);render()}
+ else if(a==='print')window.print();
+ else if(a==='export'){const u=URL.createObjectURL(new Blob([JSON.stringify(S,null,2)],{type:'application/json'}));const l=document.createElement('a');l.href=u;l.download='opportunity-engine-data.json';l.click()}
+ else if(a==='wipe'&&confirm('Delete everything saved in this app? This cannot be undone.')){try{localStorage.removeItem('oe')}catch(x){}location.reload()}});
+document.addEventListener('change',e=>{const t=e.target;
+ if(t.dataset.a==='careersel'){S.career=t.value;render()}
+ else if(t.dataset.done){t.checked?S.done[t.dataset.done]=1:delete S.done[t.dataset.done];render()}
+ else if(t.dataset.st){S.apps[+t.dataset.st].s=t.value;save()}
+ else if(t.id==='rem'){S.rem=t.checked;render()}
+ else if(t.dataset.ev){S.sk[t.dataset.ev].ev=t.value.trim();render()}});
+document.addEventListener('input',e=>{const t=e.target;
+ if(t.dataset.f){S.p[t.dataset.f]=t.value;save();$('#who').textContent=(S.p.name||'').split(' ')[0]}
+ else if(t.id==='q'){S.q=t.value;const p=t.selectionStart;render();const q=$('#q');q.focus();q.setSelectionRange(p,p)}});
+if('serviceWorker'in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+render();
+</script></body></html>
